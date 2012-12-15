@@ -1,3 +1,35 @@
 html {
   background: #222;
 }
+#playa {
+  margin: 0 auto;
+  position: relative;
+  background-size: cover;
+}
+#playa.playing .yt-player,
+#playa.paused .yt-player,
+#playa.buffering .yt-player {
+  opacity: 1;
+}
+#playa .yt-player {
+  opacity: 0;
+}
+#playa .controls {
+  bottom: 0;
+  height: 40px;
+  position: absolute;
+  text-align: center;
+  width: 100%;
+  z-index: 1;
+}
+#playa .controls > div {
+  display: inline-block;
+  height: 100%;
+  width: 40px;
+}
+#playa .controls .play {
+  background: #f00;
+}
+#playa .controls .pause {
+  background: #008000;
+}
