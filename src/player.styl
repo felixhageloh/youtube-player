@@ -1,34 +1,134 @@
+vendor(prop, args)
+  -webkit-{prop} args
+  -moz-{prop} args
+  -ms-{prop} args
+  {prop} args
+
+border-radius(args...)
+  vendor(border-radius, args)
+
+box-sizing(args...)
+  vendor(box-sizing, args)
+
+box-shadow()
+  vendor(box-shadow, arguments)
+
+user-select(args...)
+  vendor(user-select, args)
+
+background-clip(args...)
+  vendor(background-clip, args)
+
+linear-gradient(args...)
+  vendor(linear-gradient, args)
+
+radial-gradient(args...)
+  vendor(radial-gradient, args)
+
+transform(args...)
+  vendor(transform, args)
+
 html 
-  background: #222
+  background: #eae7e4
 
 #playa 
+  background-clip(padding-box)
+  //background-size: cover
+  background-repeat: no-repeat
+  background-position: 50% 50%
+  background-color: #000
+  border-radius(2px)
+  box-shadow 0 0 4px rgba(0,0,0, 0.4), 0 0 1px -1px rgba(0,0,0,0.6)
   margin: 0 auto
   position: relative
-  background-size: cover
 
   &.playing, &.paused, &.buffering
     .yt-player
       opacity: 1
-      
+
   .yt-player
     opacity: 0
-
+    border-radius(2px)
 
   .controls
+    background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.27) 70%, rgba(255, 255, 255, 0.25) 100%)
+    border-top: 1px solid rgba(0,0,0,0.3)
     bottom: 0
+    box-shadow(0 1px 1px rgba(255, 255, 255, 0.1) inset )
     height: 40px
     position: absolute
     text-align: center
     width: 100%
     z-index: 1
 
+
     > div
-      display: inline-block
+      position: absolute
       height: 100%
-      width: 40px
     
     .play
-      background: red
+      background: url(../assets/images/play.png)
+      background-size: 40px 40px
+      left: 0
+      width: 40px
+
+      &:hover
+        background: url(../assets/images/play_hover.png)
 
     .pause
-      background: green
+      background: url(../assets/images/pause.png)
+      background-size: 40px 40px
+      display: none
+      left: 0
+      width: 40px
+
+      &:hover
+        background: url(../assets/images/pause_hover.png)
+
+    .slider
+      transform(translateZ(0))
+      .track 
+        background: rgba(0,0,0,0.5)
+        border-radius(8px)
+        height: 8px
+        left: 0
+        margin-top: -(@height/2)
+        overflow: hidden
+        position: absolute
+        top: 50%
+        width: 100%
+
+      .progress 
+        background: rgba(255, 255, 255, 0.5)
+        height: 100%
+        transform(scale(0))
+        vendor(transform-origin, 0 50%)
+        width: 100%
+
+      .knob
+        position: absolute
+        height: 10px
+        width: 10px
+        border-radius(100%)
+        background: #fafafa
+        cursor: pointer
+        top: 50%
+        margin-top: -(@height/2)
+
+    .scrubber
+      left: 60px
+      right: 120px
+      height: 100%
+
+    .volume
+      height: 100%
+      right: 20px
+      width: 80px
+
+  &.playing .controls
+    .play
+      display: none
+
+  &.playing .controls
+    .pause
+      display: block
