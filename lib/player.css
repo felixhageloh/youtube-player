@@ -81,13 +81,27 @@ html {
   -moz-border-radius: 8px;
   -ms-border-radius: 8px;
   border-radius: 8px;
-  height: 8px;
-  left: 0;
-  margin-top: -4px;
+  height: 10px;
+  left: -5px;
+  margin-top: -5px;
   overflow: hidden;
   position: absolute;
   top: 50%;
   width: 100%;
+  padding: 0 5px;
+}
+#playa .controls .slider .track::before {
+  background: rgba(255,255,255,0.5);
+  -webkit-border-radius: 5px 0 0 5px;
+  -moz-border-radius: 5px 0 0 5px;
+  -ms-border-radius: 5px 0 0 5px;
+  border-radius: 5px 0 0 5px;
+  content: ' ';
+  height: 100%;
+  left: 0px;
+  position: absolute;
+  top: 0;
+  width: 5px;
 }
 #playa .controls .slider .progress {
   background: rgba(255,255,255,0.5);
@@ -114,16 +128,17 @@ html {
   cursor: pointer;
   top: 50%;
   margin-top: -5px;
+  left: -5px;
 }
 #playa .controls .scrubber {
-  left: 60px;
-  right: 120px;
+  left: 55px;
+  right: 110px;
   height: 100%;
 }
 #playa .controls .volume {
   height: 100%;
-  right: 20px;
-  width: 80px;
+  right: 25px;
+  width: 55px;
 }
 #playa.playing .controls .play {
   display: none;

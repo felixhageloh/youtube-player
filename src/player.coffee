@@ -9,8 +9,21 @@ $('script').parent().append ytApi
   callback() for callback in callbacks
 
 @Player = (domEl, videoId, options) ->
-  options ?= {}
   domEl    = $(domEl)
+  options  = $.extend {
+      videoId: videoId
+      cropX: 0
+      cropY: 0
+      playerVars:
+        html5: 1
+        modestbranding: 1
+        showinfo: 0
+        wmode: 'transparent'
+        controls: 0
+        iv_load_policy: 3
+        hd: 1
+        rel: 0
+    }, options ? {}
 
   domEl.html "
     <div class='yt-player'></div>
@@ -44,6 +57,7 @@ $('script').parent().append ytApi
   volumeSlider = null
   
   play     = false
+  playing  = false
   destroy  = false
   volume   = null
   api      = {}
@@ -52,31 +66,19 @@ $('script').parent().append ytApi
   updateInterval = 50 #ms
 
   newYTPlayer = ->
-    options = $.extend {
-      videoId: videoId
-      playerVars:
-        html5: 1
-        modestbranding: 1
-        showinfo: 0
-        wmode: 'transparent'
-        controls: 0
-        iv_load_policy: 3
-        hd: 1
-        rel: 0
-      events:
-        'onReady': playerReady
-        'onStateChange': onPlayerStateChange
-    }, options
-          
-    new YT.Player playerEl[0], options
-
+    new YT.Player playerEl[0], $.extend {
+        events:
+          'onReady': playerReady
+          'onStateChange': onPlayerStateChange
+      }, options
 
   init = ->
     domEl.css 'background-image': "url(#{thumbnailUrl()})"
     api.resize options.width, options.height
 
-    scrubber     = Slider scrubberEl, onScrubberChange
-    volumeSlider = Slider volumeEl,   onVolumeSliderChange
+    setTimeout ->
+      scrubber     = Slider scrubberEl, onScrubberChange
+      volumeSlider = Slider volumeEl,   onVolumeSliderChange
     newYTPlayer()
 
   playerReady = (event) ->
@@ -109,7 +111,10 @@ $('script').parent().append ytApi
     player.setVolume pct.x * 100
     
   api.resize = (width, height) ->
-    domEl.css width: width, height: height
+    domEl.css 
+      width:  width  - options.cropX
+      height: height - options.cropY
+
     playerEl.css width: width, height: height
     playerEl.attr('width', width).attr('height', height)
     domEl.blur()
@@ -129,6 +134,12 @@ $('script').parent().append ytApi
     else
       domEl.removeClass 'buffering'
       play = false
+
+  api.togglePlay = ->
+    if playing
+      api.pauseVideo()
+    else
+      api.playVideo()
 
   api.destroy = ->
     destroy = true
@@ -158,20 +169,24 @@ $('script').parent().append ytApi
   onPlayerStateChange = (event) ->
     switch event.data
       when YT.PlayerState.PLAYING
+        playing = true
         domEl.addClass 'playing'
         domEl.removeClass('paused').removeClass('buffering')
         scrubber.moveTo playbackPct()
         startUpdating()
-      when event.data == YT.PlayerState.BUFFERING
+      when YT.PlayerState.BUFFERING
         domEl.addClass 'buffering'
-      when event.data == YT.PlayerState.PAUSED
+      when YT.PlayerState.PAUSED
+        playing = false
         domEl.removeClass('playing').removeClass('buffering')
         domEl.addClass('paused')
         stopUpdating()
         scrubber.moveTo playbackPct()
       when YT.PlayerState.ENDED
+        playing = false
         domEl.removeClass('playing').removeClass('buffering').removeClass('paused')
         stopUpdating()
+        scrubber.moveTo 1
 
   thumbnailUrl = ->
     options.thumbnailUrl ? "http://img.youtube.com/vi/#{videoId}/0.jpg"
@@ -197,10 +212,13 @@ $('script').parent().append ytApi
     trackRect.width  = track.width()
     trackRect.height = track.height()
 
+    knobWidth  = knob.outerWidth()
+    knobHeight = knob.outerHeight()
+
     minX = 0
-    maxX = trackRect.width  - knob.width()
+    maxX = trackRect.width 
     minY = 0
-    maxY = trackRect.height - knob.height()
+    maxY = trackRect.height
 
     constrain = (value, dimension) ->
       if dimension == 'x'
@@ -209,6 +227,7 @@ $('script').parent().append ytApi
         Math.max minY, Math.min(maxY, value)
 
     startDrag = (e) ->
+      return unless e.which == 1
       startPoint = x: e.pageX, y: e.pageY
       startPos   = x: parseInt(knob.css 'left'), y: parseInt(knob.css 'top')
       startPos.x = 0 if isNaN startPos.x
@@ -257,13 +276,13 @@ $('script').parent().append ytApi
         y: (if options.dragY then positionPct().y else 1)
       progressBar.css webkitTransform: "scale(#{scale.x}, #{scale.y})"
       knob.css 
-        left: if options.dragX then currentPos.x else null
-        top:  if options.dragY then currentPos.y else null
+        left: if options.dragX then currentPos.x - knobWidth/2  else null
+        top:  if options.dragY then currentPos.y - knobHeight/2 else null
 
     moveTo = (pct) ->
       return if dragging
-      currentPos.x = pct * (maxX - minX) if options.dragX
-      currentPos.y = pct * (maxY - minY) if options.dragY
+      currentPos.x = minX + pct * (maxX - minX) if options.dragX
+      currentPos.y = minY + pct * (maxY - minY) if options.dragY
 
       render()
 
