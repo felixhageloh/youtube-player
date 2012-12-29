@@ -39,26 +39,48 @@ $('script').parent().append ytApi
   scrubberEl   = controls.find '.scrubber'
   volumeEl     = controls.find '.volume'
 
-
   player       = null
   scrubber     = null
   volumeSlider = null
   
   play     = false
   destroy  = false
+  volume   = null
   api      = {}
 
   updateTimer    = null
   updateInterval = 50 #ms
 
+  newYTPlayer = ->
+    options = $.extend {
+      videoId: videoId
+      playerVars:
+        html5: 1
+        modestbranding: 1
+        showinfo: 0
+        wmode: 'transparent'
+        controls: 0
+        iv_load_policy: 3
+        hd: 1
+        rel: 0
+      events:
+        'onReady': playerReady
+        'onStateChange': onPlayerStateChange
+    }, options
+          
+    new YT.Player playerEl[0], options
+
 
   init = ->
-    newYTPlayer()
     domEl.css 'background-image': "url(#{thumbnailUrl()})"
-    domEl.css width: options.width, height: options.height
+    api.resize options.width, options.height
+
+    scrubber     = Slider scrubberEl, onScrubberChange
+    volumeSlider = Slider volumeEl,   onVolumeSliderChange
+    newYTPlayer()
 
   playerReady = (event) ->
-    player   = event.target 
+    player = event.target 
     
     if destroy
       player.destroy()
@@ -66,12 +88,10 @@ $('script').parent().append ytApi
 
     playerEl = domEl.find('.yt-player')
 
-    scrubber     = Slider scrubberEl, onScrubberChange
-    volumeSlider = Slider volumeEl,   onVolumeSliderChange
-
-    volumeSlider.moveTo player.getVolume()/100
-
-    api[name] = prop for name, prop of player
+    volume ?= player.getVolume()
+    api.setVolume volume
+    
+    api[name] ?= prop for name, prop of player
 
     player.playVideo() if play
     play = false
@@ -88,7 +108,6 @@ $('script').parent().append ytApi
 
     player.setVolume pct.x * 100
     
-
   api.resize = (width, height) ->
     domEl.css width: width, height: height
     playerEl.css width: width, height: height
@@ -98,34 +117,31 @@ $('script').parent().append ytApi
   # once the player loaded, this will be overridden by the
   # actual play method
   api.playVideo = ->
-    domEl.addClass 'buffering'
-    play = true
+    if player
+      player.playVideo()
+    else
+      domEl.addClass 'buffering'
+      play = true
 
   api.pauseVideo = ->
-    domEl.removeClass 'buffering'
-    play = false
+    if player
+      player.pauseVideo()
+    else
+      domEl.removeClass 'buffering'
+      play = false
 
   api.destroy = ->
     destroy = true
+    player.destroy() if player
+    domEl.removeClass 'paused'
+    domEl.removeClass 'playing'
+    domEl.removeClass 'buffering'
 
-  newYTPlayer = ->
-    options = $.extend {
-      videoId: videoId
-      playerVars:
-        html5: 1
-        modestbranding: 1
-        showinfo: 0
-        wmode: 'transparent'
-        controls: 0
-        iv_load_policy: 3
-        hd: 1
-      events:
-        'onReady': playerReady
-        'onStateChange': onPlayerStateChange
-    }, options
-          
-    new YT.Player playerEl[0], options
-
+  api.setVolume = (volumePct) ->
+    return if volumePct < 0 or volumePct > 100
+    volume = volumePct
+    player.setVolume volume if player?
+    volumeSlider.moveTo volume/100
 
   playbackPct = ->
     return unless player
@@ -137,29 +153,32 @@ $('script').parent().append ytApi
     , updateInterval
 
   stopUpdating = ->
-    clearInterval updateInterval if updateInterval
+    clearInterval updateTimer if updateTimer
 
   onPlayerStateChange = (event) ->
-    if event.data == YT.PlayerState.PLAYING
-      domEl.addClass 'playing'
-      domEl.removeClass('paused').removeClass('buffering')
-      scrubber.moveTo playbackPct()
-      startUpdating()
-    else if event.data == YT.PlayerState.BUFFERING
-      domEl.addClass 'buffering'
-    else if event.data == YT.PlayerState.PAUSED
-      domEl.removeClass('playing').removeClass('buffering')
-      domEl.addClass('paused')
-      stopUpdating()
-      scrubber.moveTo playbackPct()
+    switch event.data
+      when YT.PlayerState.PLAYING
+        domEl.addClass 'playing'
+        domEl.removeClass('paused').removeClass('buffering')
+        scrubber.moveTo playbackPct()
+        startUpdating()
+      when event.data == YT.PlayerState.BUFFERING
+        domEl.addClass 'buffering'
+      when event.data == YT.PlayerState.PAUSED
+        domEl.removeClass('playing').removeClass('buffering')
+        domEl.addClass('paused')
+        stopUpdating()
+        scrubber.moveTo playbackPct()
+      when YT.PlayerState.ENDED
+        domEl.removeClass('playing').removeClass('buffering').removeClass('paused')
+        stopUpdating()
 
   thumbnailUrl = ->
-    "http://img.youtube.com/vi/#{videoId}/0.jpg"
+    options.thumbnailUrl ? "http://img.youtube.com/vi/#{videoId}/0.jpg"
 
   # events 
   playButton.on  'click', -> api.playVideo()
   pauseButton.on 'click', -> api.pauseVideo()
-
 
   Slider = (domEl, callback, options = {}) ->
     track          = domEl.find '.track'
