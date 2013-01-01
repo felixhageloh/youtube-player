@@ -60,6 +60,7 @@ $('script').parent().append ytApi
   playing  = false
   destroy  = false
   volume   = null
+  quality  = null
   api      = {}
 
   updateTimer    = null
@@ -92,7 +93,8 @@ $('script').parent().append ytApi
 
     volume ?= player.getVolume()
     api.setVolume volume
-    
+    api.setPlaybackQuality quality if quality
+
     api[name] ?= prop for name, prop of player
 
     player.playVideo() if play
@@ -153,6 +155,10 @@ $('script').parent().append ytApi
     volume = volumePct
     player.setVolume volume if player?
     volumeSlider.moveTo volume/100
+
+  api.setPlaybackQuality = (suggestedQuality) ->
+    quality = suggestedQuality
+    player.setPlaybackQuality suggestedQuality
 
   playbackPct = ->
     return unless player
@@ -274,7 +280,11 @@ $('script').parent().append ytApi
       scale = 
         x: (if options.dragX then positionPct().x else 1)
         y: (if options.dragY then positionPct().y else 1)
+      
       progressBar.css webkitTransform: "scale(#{scale.x}, #{scale.y})"
+      progressBar.css mozTransform: "scale(#{scale.x}, #{scale.y})"
+      progressBar.css transform: "scale(#{scale.x}, #{scale.y})"
+      
       knob.css 
         left: if options.dragX then currentPos.x - knobWidth/2  else null
         top:  if options.dragY then currentPos.y - knobHeight/2 else null
