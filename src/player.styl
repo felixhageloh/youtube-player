@@ -31,6 +31,13 @@ transform(args...)
 html 
   background: #eae7e4
 
+
+.fullscreen-button
+  width: 40px
+  background-size: 25px 25px
+  right: 5px
+
+
 #playa 
   background-clip(padding-box)
   //background-size: cover
@@ -61,7 +68,6 @@ html
     width: 100%
     z-index: 1
 
-
     > div
       position: absolute
       height: 100%
@@ -74,6 +80,7 @@ html
 
       &:hover
         background: url(../assets/images/play_hover.png)
+        background-size: 40px 40px
 
     .pause
       background: url(../assets/images/pause.png)
@@ -84,6 +91,17 @@ html
 
       &:hover
         background: url(../assets/images/pause_hover.png)
+        background-size: 40px 40px
+
+    .goFullscreen
+      @extend .fullscreen-button
+      background: url(../assets/images/fullscreen.png) no-repeat 50% 50%
+      background-size: 25px 25px
+
+    .exitFullscreen
+      @extend .fullscreen-button
+      background: url(../assets/images/exit_fullscreen.png) no-repeat 50% 50%
+      background-size: 25px 25px
 
     .slider
       transform(translateZ(0))
@@ -129,13 +147,14 @@ html
 
     .scrubber
       left: 55px
-      right: 110px
+      right: 140px
       height: 100%
 
     .volume
       height: 100%
-      right: 25px
+      right: 55px
       width: 55px
+
 
   &.playing .controls
     .play

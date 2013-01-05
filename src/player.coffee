@@ -30,6 +30,8 @@ $('script').parent().append ytApi
     <div class='controls'>
       <div class='play'></div>
       <div class='pause'></div>
+      <div class='goFullscreen'></div>
+      <div class='exitFullscreen'></div>
       <div class='scrubber slider'>
         <div class='track'>
           <div class='progress'></div>
@@ -45,23 +47,26 @@ $('script').parent().append ytApi
     </div>
   "
 
-  controls     = domEl.find '.controls'
-  playerEl     = domEl.find '.yt-player'
-  playButton   = controls.find '.play'
-  pauseButton  = controls.find '.pause'
-  scrubberEl   = controls.find '.scrubber'
-  volumeEl     = controls.find '.volume'
+  controls             = domEl.find '.controls'
+  playerEl             = domEl.find '.yt-player'
+  playButton           = controls.find '.play'
+  fullscreenButton     = controls.find '.goFullscreen'
+  exitFullscreenButton = controls.find '.exitFullscreen'
+  pauseButton          = controls.find '.pause'
+  scrubberEl           = controls.find '.scrubber'
+  volumeEl             = controls.find '.volume'
 
   player       = null
   scrubber     = null
   volumeSlider = null
   
-  play     = false
-  playing  = false
-  destroy  = false
-  volume   = null
-  quality  = null
-  api      = {}
+  play       = false
+  playing    = false
+  destroy    = false
+  volume     = null
+  quality    = null
+  fullscreen = false
+  api        = {}
 
   updateTimer    = null
   updateInterval = 50 #ms
@@ -80,7 +85,10 @@ $('script').parent().append ytApi
     setTimeout ->
       scrubber     = Slider scrubberEl, onScrubberChange
       volumeSlider = Slider volumeEl,   onVolumeSliderChange
+      onFullscreenChange()
+
     newYTPlayer()
+    
 
   playerReady = (event) ->
     player = event.target 
@@ -119,7 +127,47 @@ $('script').parent().append ytApi
 
     playerEl.css width: width, height: height
     playerEl.attr('width', width).attr('height', height)
-    domEl.blur()
+    domEl.blur
+
+  api.goFullscreen = ->
+    return if fullscreen
+    domEl[0].requestFullscreen?()
+    domEl[0].webkitRequestFullscreen?()
+    domEl[0].mozRequestFullScreen?()
+
+  api.exitFullscreen = ->
+    return unless fullscreen
+    document.cancelFullscreen?()
+    document.webkitCancelFullScreen?()
+    document.mozCancelFullScreen?()
+
+  onFullscreenChange = ->
+    if fullscreen
+      domEl.addClass('fullscreen')
+      api.resize window.screen.width, window.screen.height
+      fullscreenButton.hide()
+      exitFullscreenButton.show()
+      setTimeout ->
+        volumeSlider.refresh()
+        scrubber.refresh()
+    else
+      domEl.removeClass('fullscreen')
+      api.resize options.width, options.height
+      fullscreenButton.show()
+      exitFullscreenButton.hide()
+      setTimeout ->
+        volumeSlider.refresh()
+        scrubber.refresh()
+
+  $(document).on 'mozfullscreenchange', ->
+    fullscreen = document.mozFullScreenElement?
+    onFullscreenChange()
+    
+  $(document).on 'webkitfullscreenchange', ->
+    fullscreen = document.webkitFullscreenElement?
+    onFullscreenChange()
+
+  api.isFullscreen = -> fullscreen
 
   # once the player loaded, this will be overridden by the
   # actual play method
@@ -154,11 +202,11 @@ $('script').parent().append ytApi
     return if volumePct < 0 or volumePct > 100
     volume = volumePct
     player.setVolume volume if player?
-    volumeSlider.moveTo volume/100
+    volumeSlider.moveTo volume/100 if volumeSlider?
 
   api.setPlaybackQuality = (suggestedQuality) ->
     quality = suggestedQuality
-    player.setPlaybackQuality suggestedQuality
+    player.setPlaybackQuality suggestedQuality if player?
 
   playbackPct = ->
     return unless player
@@ -201,6 +249,10 @@ $('script').parent().append ytApi
   playButton.on  'click', -> api.playVideo()
   pauseButton.on 'click', -> api.pauseVideo()
 
+  fullscreenButton.on 'click', -> api.goFullscreen()
+  exitFullscreenButton.on 'click', -> api.exitFullscreen()
+
+
   Slider = (domEl, callback, options = {}) ->
     track          = domEl.find '.track'
     knob           = domEl.find '.knob'
@@ -214,17 +266,24 @@ $('script').parent().append ytApi
     options.dragX ?= true
     options.dragY ?= false
 
-    trackRect        = track.offset()
-    trackRect.width  = track.width()
-    trackRect.height = track.height()
+    trackRect      = null
+    knobWidth      = null
+    knobHeight     = null
 
-    knobWidth  = knob.outerWidth()
-    knobHeight = knob.outerHeight()
+    maxX = maxY = minX = minY = null
 
-    minX = 0
-    maxX = trackRect.width 
-    minY = 0
-    maxY = trackRect.height
+    init = ->
+      trackRect        = track.offset()
+      trackRect.width  = track.width()
+      trackRect.height = track.height()
+
+      knobWidth  = knob.outerWidth()
+      knobHeight = knob.outerHeight()
+
+      minX = 0
+      maxX = trackRect.width 
+      minY = 0
+      maxY = trackRect.height
 
     constrain = (value, dimension) ->
       if dimension == 'x'
@@ -296,11 +355,13 @@ $('script').parent().append ytApi
 
       render()
 
+    init()
 
     knob.on 'mousedown', startDrag
     track.on 'click', trackClicked
 
     moveTo: moveTo
+    refresh: init
 
 
   if YT? then init() else callbacks.push init

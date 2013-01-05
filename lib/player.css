@@ -1,6 +1,13 @@
 html {
   background: #eae7e4;
 }
+.fullscreen-button,
+#playa .controls .goFullscreen,
+#playa .controls .exitFullscreen {
+  width: 40px;
+  background-size: 25px 25px;
+  right: 5px;
+}
 #playa {
   -webkit-background-clip: padding-box;
   -moz-background-clip: padding-box;
@@ -58,6 +65,7 @@ html {
 }
 #playa .controls .play:hover {
   background: url("../assets/images/play_hover.png");
+  background-size: 40px 40px;
 }
 #playa .controls .pause {
   background: url("../assets/images/pause.png");
@@ -68,6 +76,15 @@ html {
 }
 #playa .controls .pause:hover {
   background: url("../assets/images/pause_hover.png");
+  background-size: 40px 40px;
+}
+#playa .controls .goFullscreen {
+  background: url("../assets/images/fullscreen.png") no-repeat 50% 50%;
+  background-size: 25px 25px;
+}
+#playa .controls .exitFullscreen {
+  background: url("../assets/images/exit_fullscreen.png") no-repeat 50% 50%;
+  background-size: 25px 25px;
 }
 #playa .controls .slider {
   -webkit-transform: translateZ(0);
@@ -132,12 +149,12 @@ html {
 }
 #playa .controls .scrubber {
   left: 55px;
-  right: 110px;
+  right: 140px;
   height: 100%;
 }
 #playa .controls .volume {
   height: 100%;
-  right: 25px;
+  right: 55px;
   width: 55px;
 }
 #playa.playing .controls .play {
